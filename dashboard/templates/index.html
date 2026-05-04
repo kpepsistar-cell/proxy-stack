@@ -116,17 +116,24 @@
         <div class="text-sm text-zinc-400">
           Secret: <span class="text-zinc-200 break-all">{{ cfg.MTG_SECRET }}</span>
         </div>
+        <p class="text-xs text-zinc-500">
+          📱 <strong>手机端</strong>:复制下方 <code class="text-sky-400">tg://</code> 链接(已安装 Telegram 时自动唤起加入代理)
+        </p>
         <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
-          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-mtg">{{ links.mtg_https }}</code>
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-mtg-tg">{{ links.mtg_tg }}</code>
           <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-sky-600 hover:bg-sky-500 rounded-md text-white"
-                  data-target="link-mtg">Copy</button>
+                  data-target="link-mtg-tg">Copy</button>
           <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
-                  data-text="{{ links.mtg_https }}">QR</button>
+                  data-text="{{ links.mtg_tg }}">QR</button>
         </div>
         <p class="text-xs text-zinc-500">
-          Click on a phone with Telegram installed to add proxy directly:
-          <a href="{{ links.mtg_tg }}" class="text-sky-400 hover:underline">{{ links.mtg_tg }}</a>
+          🔗 <strong>分享给别人</strong>:复制下方 <code class="text-sky-400">https://t.me/</code> 链接(对方点击会进 Telegram 添加代理)
         </p>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-mtg-https">{{ links.mtg_https }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-sky-600 hover:bg-sky-500 rounded-md text-white"
+                  data-target="link-mtg-https">Copy</button>
+        </div>
       </div>
     </div>
   </section>
@@ -184,27 +191,55 @@
   });
 })();
 
-// Copy to clipboard
+// 复制到剪贴板(兼容 HTTP 和 HTTPS,以及不支持 navigator.clipboard 的旧浏览器)
+function copyText(text, btn) {
+  const showSuccess = () => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    setTimeout(() => btn.textContent = orig, 1500);
+  };
+  const showFail = () => {
+    const orig = btn.textContent;
+    btn.textContent = '✗ 失败';
+    setTimeout(() => btn.textContent = orig, 1500);
+  };
+
+  // 优先用现代 API(HTTPS 下可用)
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(showSuccess)
+      .catch(() => fallbackCopy(text) ? showSuccess() : showFail());
+  } else {
+    // HTTP 下用 fallback
+    fallbackCopy(text) ? showSuccess() : showFail();
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '0';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let success = false;
+  try {
+    success = document.execCommand('copy');
+  } catch (e) {
+    success = false;
+  }
+  document.body.removeChild(ta);
+  return success;
+}
+
 document.querySelectorAll('.copy-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = document.getElementById(btn.dataset.target);
     if (!target) return;
-    const text = target.textContent.trim();
-    navigator.clipboard.writeText(text).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ Copied';
-      setTimeout(() => btn.textContent = orig, 1500);
-    }).catch(() => {
-      // Fallback
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-      btn.textContent = '✓ Copied';
-      setTimeout(() => btn.textContent = 'Copy', 1500);
-    });
+    copyText(target.textContent.trim(), btn);
   });
 });
 

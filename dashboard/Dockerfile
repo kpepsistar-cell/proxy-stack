@@ -7,7 +7,7 @@ RUN apk add --no-cache curl docker-cli && \
 
 COPY app.py /app/app.py
 COPY templates /app/templates
-COPY static /app/static
+
 
 EXPOSE 5000
 

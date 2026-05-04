@@ -1,11 +1,11 @@
 #!/bin/bash
 # ============================================================
-# Proxy Stack - Interactive Installer & Manager
-# Repo: https://github.com/kpepsistar-cell/proxy-stack
+# Proxy Stack - 交互式安装与管理菜单
+# 仓库: https://github.com/kpepsistar-cell/proxy-stack
 #
-# Usage:
+# 使用方法:
 #   bash <(curl -sL https://raw.githubusercontent.com/kpepsistar-cell/proxy-stack/main/install.sh)
-#   or after install:
+#   或安装后直接输入:
 #   proxy
 # ============================================================
 
@@ -18,7 +18,7 @@ INSTALL_DIR="/opt/proxy"
 RAW_BASE="https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/${REPO_BRANCH}"
 GIT_URL="https://github.com/${REPO_USER}/${REPO_NAME}.git"
 
-# ---------- Colors ----------
+# ---------- 颜色 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -27,17 +27,17 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# ---------- Logging ----------
+# ---------- 日志函数 ----------
 log()  { echo -e "${BLUE}[$(date +'%H:%M:%S')]${NC} $*"; }
-ok()   { echo -e "${GREEN}[OK]${NC} $*"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-err()  { echo -e "${RED}[ERR]${NC} $*"; }
+ok()   { echo -e "${GREEN}[成功]${NC} $*"; }
+warn() { echo -e "${YELLOW}[警告]${NC} $*"; }
+err()  { echo -e "${RED}[错误]${NC} $*"; }
 die()  { err "$*"; exit 1; }
 
-# ---------- Pre-flight ----------
-[ "$(id -u)" -eq 0 ] || die "Must run as root. Try: sudo bash install.sh"
+# ---------- 前置检查 ----------
+[ "$(id -u)" -eq 0 ] || die "需要 root 权限运行,请用: sudo bash install.sh"
 
-# ---------- Compose helper ----------
+# ---------- docker compose 兼容 ----------
 compose() {
     if docker compose version >/dev/null 2>&1; then
         docker compose "$@"
@@ -46,74 +46,73 @@ compose() {
     fi
 }
 
-# ---------- Install required tools ----------
+# ---------- 安装基础工具 ----------
 install_prereqs() {
     if ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
-        log "Installing prerequisites (git, curl)..."
+        log "安装基础工具(git、curl)..."
         if command -v apt-get >/dev/null 2>&1; then
             apt-get update -y >/dev/null 2>&1
             apt-get install -y git curl >/dev/null 2>&1
         elif command -v yum >/dev/null 2>&1; then
             yum install -y git curl >/dev/null 2>&1
         else
-            die "Cannot install git/curl - unsupported OS"
+            die "无法安装 git/curl,系统不支持"
         fi
     fi
 }
 
-# ---------- Fetch / update repo ----------
+# ---------- 拉取/更新仓库 ----------
 fetch_repo() {
     if [ -d "$INSTALL_DIR/.git" ]; then
-        log "Updating existing repo at $INSTALL_DIR..."
+        log "更新本地仓库 $INSTALL_DIR..."
         cd "$INSTALL_DIR"
-        # Stash any local changes (user might have edited config.env)
         git stash --include-untracked >/dev/null 2>&1 || true
-        git pull origin "$REPO_BRANCH" >/dev/null 2>&1 || warn "git pull failed, continuing with existing files"
+        git pull origin "$REPO_BRANCH" >/dev/null 2>&1 || warn "git pull 失败,继续用现有文件"
         git stash pop >/dev/null 2>&1 || true
     elif [ -d "$INSTALL_DIR" ] && [ "$(ls -A $INSTALL_DIR 2>/dev/null)" ]; then
-        log "$INSTALL_DIR exists but is not a git repo. Backing up to ${INSTALL_DIR}.bak..."
+        log "$INSTALL_DIR 已存在但不是 git 仓库,备份到 ${INSTALL_DIR}.bak..."
         mv "$INSTALL_DIR" "${INSTALL_DIR}.bak.$(date +%s)"
-        git clone "$GIT_URL" "$INSTALL_DIR" >/dev/null 2>&1 || die "git clone failed"
+        git clone "$GIT_URL" "$INSTALL_DIR" >/dev/null 2>&1 || die "git clone 失败"
     else
-        log "Cloning repo to $INSTALL_DIR..."
+        log "克隆仓库到 $INSTALL_DIR..."
         mkdir -p "$(dirname $INSTALL_DIR)"
-        git clone "$GIT_URL" "$INSTALL_DIR" >/dev/null 2>&1 || die "git clone failed"
+        git clone "$GIT_URL" "$INSTALL_DIR" >/dev/null 2>&1 || die "git clone 失败"
     fi
     cd "$INSTALL_DIR"
     chmod +x *.sh 2>/dev/null || true
-    ok "Repo ready at $INSTALL_DIR"
+    ok "仓库已就绪 ($INSTALL_DIR)"
 }
 
-# ---------- Symlink to /usr/local/bin/proxy ----------
+# ---------- 创建 proxy 命令快捷方式 ----------
 install_shortcut() {
     local target="/usr/local/bin/proxy"
     if [ ! -L "$target" ] || [ "$(readlink $target)" != "$INSTALL_DIR/install.sh" ]; then
         ln -sf "$INSTALL_DIR/install.sh" "$target"
         chmod +x "$target"
-        ok "Shortcut installed: run 'proxy' anywhere to open this menu"
+        ok "快捷命令已创建: 任何位置输入 'proxy' 都能呼出菜单"
     fi
 }
 
 # ============================================================
-# Menu Actions
+# 菜单操作
 # ============================================================
 
 action_deploy() {
     cd "$INSTALL_DIR"
-    log "Running full deploy..."
+    log "开始全自动部署..."
     bash deploy.sh
 }
 
 action_info() {
     cd "$INSTALL_DIR"
-    [ -f config.env ] || { warn "Not deployed yet. Run option 1 first."; return; }
+    [ -f config.env ] || { warn "尚未部署,请先选 1) 全新部署"; return; }
     bash info.sh
 }
 
 action_restart() {
     cd "$INSTALL_DIR"
-    [ -f docker-compose.yml ] || { warn "Not deployed yet."; return; }
-    log "Restarting services..."
+    [ -f docker-compose.yml ] || { warn "尚未部署"; return; }
+    log "重启所有服务..."
     compose restart
     sleep 2
     compose ps
@@ -121,38 +120,38 @@ action_restart() {
 
 action_update() {
     cd "$INSTALL_DIR"
-    log "Pulling latest from GitHub..."
+    log "从 GitHub 拉取最新版本..."
     git stash --include-untracked >/dev/null 2>&1 || true
-    git pull origin "$REPO_BRANCH" || warn "git pull had issues"
+    git pull origin "$REPO_BRANCH" || warn "git pull 出错"
     git stash pop >/dev/null 2>&1 || true
     chmod +x *.sh
 
-    log "Pulling latest docker images..."
+    log "拉取最新 docker 镜像..."
     compose pull
 
-    log "Rebuilding and restarting..."
+    log "重新构建并重启..."
     compose up -d --build
 
     sleep 2
     compose ps
-    ok "Update complete"
+    ok "更新完成"
 }
 
 action_change_port() {
     cd "$INSTALL_DIR"
-    [ -f config.env ] || { warn "Not deployed yet."; return; }
+    [ -f config.env ] || { warn "尚未部署"; return; }
 
     echo
-    echo "Current ports:"
+    echo "当前端口配置:"
     grep -E '_PORT=' config.env | sed 's/^/  /'
     echo
-    echo "Which port to change?"
+    echo "要修改哪个端口?"
     echo "  1) VLESS-Reality (TCP)"
     echo "  2) Hysteria2 (UDP)"
     echo "  3) MTProxy (TCP)"
-    echo "  4) Dashboard (TCP)"
-    echo "  0) Cancel"
-    read -p "Choice [0-4]: " choice
+    echo "  4) Dashboard 面板 (TCP)"
+    echo "  0) 取消"
+    read -p "请选择 [0-4]: " choice
 
     local var=""
     case "$choice" in
@@ -161,64 +160,66 @@ action_change_port() {
         3) var="MTG_PORT" ;;
         4) var="DASHBOARD_PORT" ;;
         0) return ;;
-        *) warn "Invalid"; return ;;
+        *) warn "无效选项"; return ;;
     esac
 
     local current
     current=$(grep "^${var}=" config.env | cut -d= -f2)
-    read -p "New port for $var (current: $current): " new_port
+    read -p "$var 的新端口(当前: $current): " new_port
 
     if ! [[ "$new_port" =~ ^[0-9]+$ ]] || [ "$new_port" -lt 1 ] || [ "$new_port" -gt 65535 ]; then
-        err "Invalid port number"
+        err "端口号无效"
         return
     fi
 
     sed -i "s|^${var}=.*|${var}=${new_port}|" config.env
-    ok "Updated $var=$new_port"
+    ok "已更新 $var=$new_port"
 
-    read -p "Re-deploy now? [Y/n] " confirm
+    read -p "现在重新部署应用更改?[Y/n] " confirm
     [[ ! "$confirm" =~ ^[Nn]$ ]] && bash deploy.sh
 }
 
 action_logs() {
     cd "$INSTALL_DIR"
-    [ -f docker-compose.yml ] || { warn "Not deployed yet."; return; }
+    [ -f docker-compose.yml ] || { warn "尚未部署"; return; }
     echo
-    echo "Which service's logs?"
+    echo "查看哪个服务的日志?"
     echo "  1) sing-box (VLESS + Hy2)"
     echo "  2) mtg (MTProxy)"
-    echo "  3) dashboard"
-    echo "  4) all"
-    echo "  0) Cancel"
-    read -p "Choice [0-4]: " choice
+    echo "  3) dashboard (面板)"
+    echo "  4) 全部"
+    echo "  0) 取消"
+    echo
+    echo "提示: 按 Ctrl+C 退出日志查看"
+    read -p "请选择 [0-4]: " choice
     case "$choice" in
         1) compose logs -f --tail=50 singbox ;;
         2) compose logs -f --tail=50 mtg ;;
         3) compose logs -f --tail=50 dashboard ;;
         4) compose logs -f --tail=20 ;;
         0) return ;;
-        *) warn "Invalid" ;;
+        *) warn "无效选项" ;;
     esac
 }
 
 action_change_sni() {
     cd "$INSTALL_DIR"
-    [ -f config.env ] || { warn "Not deployed yet."; return; }
+    [ -f config.env ] || { warn "尚未部署"; return; }
 
     local current
     current=$(grep "^REALITY_SNI=" config.env | cut -d= -f2)
     echo
-    echo "Current Reality SNI: $current"
+    echo "当前 Reality 伪装域名: $current"
     echo
-    echo "Common SNI options (must be a real HTTPS site that supports TLS 1.3):"
-    echo "  1) www.microsoft.com    (default, very stable)"
-    echo "  2) www.cloudflare.com   (CF, sometimes blocked in CN)"
-    echo "  3) www.apple.com        (Apple)"
+    echo "常用伪装域名(必须是真实存在且支持 TLS 1.3 的网站):"
+    echo "  1) www.microsoft.com    (默认,稳定)"
+    echo "  2) www.cloudflare.com   (CF,某些时候国内被墙)"
+    echo "  3) www.apple.com        (苹果)"
     echo "  4) addons.mozilla.org   (Mozilla)"
-    echo "  5) www.amazon.com       (Amazon)"
-    echo "  6) Custom (enter your own)"
-    echo "  0) Cancel"
-    read -p "Choice [0-6]: " choice
+    echo "  5) www.amazon.com       (亚马逊)"
+    echo "  6) 自定义(自己输入)"
+    echo "  0) 取消"
+    read -p "请选择 [0-6]: " choice
 
     local new_sni=""
     case "$choice" in
@@ -227,69 +228,67 @@ action_change_sni() {
         3) new_sni="www.apple.com" ;;
         4) new_sni="addons.mozilla.org" ;;
         5) new_sni="www.amazon.com" ;;
-        6) read -p "Enter SNI domain (e.g., www.example.com): " new_sni ;;
+        6) read -p "输入自定义域名(例如 www.example.com): " new_sni ;;
         0) return ;;
-        *) warn "Invalid"; return ;;
+        *) warn "无效选项"; return ;;
     esac
 
-    [ -z "$new_sni" ] && { warn "Empty SNI"; return; }
+    [ -z "$new_sni" ] && { warn "域名为空"; return; }
 
     sed -i "s|^REALITY_SNI=.*|REALITY_SNI=${new_sni}|" config.env
-    ok "Updated REALITY_SNI=$new_sni"
-    log "Re-deploying to apply..."
+    ok "已更新 REALITY_SNI=$new_sni"
+    log "重新部署应用更改..."
     bash deploy.sh
-    warn "All clients must re-import the VLESS link (SNI changed)."
+    warn "Reality SNI 已更改,所有客户端需要重新导入 VLESS 链接"
 }
 
 action_regen_mtg_secret() {
     cd "$INSTALL_DIR"
-    [ -f config.env ] || { warn "Not deployed yet."; return; }
+    [ -f config.env ] || { warn "尚未部署"; return; }
 
-    log "Generating new mtg secret (hex format for iOS compatibility)..."
+    log "生成新的 mtg 密钥(hex 格式,iOS 兼容)..."
     local fake_host="www.cloudflare.com"
     local host_hex
     host_hex=$(echo -n "$fake_host" | od -An -tx1 | tr -d ' \n')
     local new_secret="ee$(openssl rand -hex 16)${host_hex}"
 
     sed -i "s|^MTG_SECRET=.*|MTG_SECRET=${new_secret}|" config.env
-    ok "New secret: $new_secret"
+    ok "新密钥: $new_secret"
 
-    log "Restarting mtg..."
+    log "重启 mtg 容器..."
     compose up -d mtg
 
     sleep 2
-    log "New Telegram links:"
+    log "新的 Telegram 代理链接:"
     # shellcheck disable=SC1091
     . ./config.env
     echo "  tg://proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${new_secret}"
     echo "  https://t.me/proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${new_secret}"
-    warn "Re-add proxy in Telegram (delete old one first)."
+    warn "请在 Telegram 中删除旧代理后重新添加(完全关闭 Telegram 再点新链接)"
 }
 
 action_bbr_status() {
     echo
-    log "BBR / Network Tuning Status"
+    log "BBR 加速 / 网络优化 状态"
     echo "----------------------------------------"
-    echo "Congestion control: $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)"
-    echo "Available:          $(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null)"
-    echo "Queue scheduler:    $(sysctl -n net.core.default_qdisc 2>/dev/null)"
-    echo "TCP Fast Open:      $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null)"
-    echo "rmem_max:           $(sysctl -n net.core.rmem_max 2>/dev/null) bytes"
-    echo "wmem_max:           $(sysctl -n net.core.wmem_max 2>/dev/null) bytes"
+    echo "拥塞控制算法:   $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)"
+    echo "可用算法:       $(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null)"
+    echo "队列调度器:     $(sysctl -n net.core.default_qdisc 2>/dev/null)"
+    echo "TCP Fast Open:  $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null)"
+    echo "接收缓冲区上限: $(sysctl -n net.core.rmem_max 2>/dev/null) bytes"
+    echo "发送缓冲区上限: $(sysctl -n net.core.wmem_max 2>/dev/null) bytes"
     echo "----------------------------------------"
 
     local cc
     cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)
     if [ "$cc" = "bbr" ]; then
-        ok "BBR is active ✓"
+        ok "BBR 已启用 ✓"
     else
-        warn "BBR is NOT active (current: $cc)"
+        warn "BBR 未启用(当前: $cc)"
         echo
-        read -p "Enable BBR now? [Y/n] " confirm
+        read -p "现在启用 BBR?[Y/n] " confirm
         if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
             cd "$INSTALL_DIR"
-            # Reuse deploy.sh's enable_bbr logic by running just that part
-            # We'll source deploy.sh functions
             bash -c "source <(sed -n '/^enable_bbr()/,/^}/p' $INSTALL_DIR/deploy.sh) && enable_bbr"
         fi
     fi
@@ -297,12 +296,12 @@ action_bbr_status() {
 
 action_uninstall() {
     cd "$INSTALL_DIR"
-    [ -f uninstall.sh ] || { warn "uninstall.sh not found"; return; }
+    [ -f uninstall.sh ] || { warn "uninstall.sh 不存在"; return; }
     bash uninstall.sh
 }
 
 # ============================================================
-# Menu
+# 菜单显示
 # ============================================================
 
 show_status_bar() {
@@ -311,11 +310,11 @@ show_status_bar() {
         local running
         running=$(compose ps --status running 2>/dev/null | grep -c "proxy-" || echo "0")
         if [ "$running" = "3" ]; then
-            echo -e "  ${GREEN}● Running${NC} (3/3 containers up)"
+            echo -e "  状态: ${GREEN}● 运行中${NC} (3/3 容器正常)"
         elif [ "$running" -gt 0 ]; then
-            echo -e "  ${YELLOW}● Partial${NC} ($running/3 containers up)"
+            echo -e "  状态: ${YELLOW}● 部分运行${NC} ($running/3 容器运行中)"
         else
-            echo -e "  ${RED}● Stopped${NC} (no containers running)"
+            echo -e "  状态: ${RED}● 已停止${NC} (无容器运行)"
         fi
 
         if [ -f config.env ]; then
@@ -323,10 +322,10 @@ show_status_bar() {
             ip=$(grep '^SERVER_IP=' config.env | cut -d= -f2)
             local dport
             dport=$(grep '^DASHBOARD_PORT=' config.env | cut -d= -f2)
-            echo -e "  Dashboard: ${CYAN}http://${ip}:${dport}${NC}"
+            echo -e "  面板地址: ${CYAN}http://${ip}:${dport}${NC}"
         fi
     else
-        echo -e "  ${YELLOW}● Not deployed${NC}"
+        echo -e "  状态: ${YELLOW}● 未部署${NC}"
     fi
 }
 
@@ -335,36 +334,36 @@ show_menu() {
     echo -e "${BOLD}${CYAN}"
     cat <<'BANNER'
   ╔══════════════════════════════════════════════╗
-  ║       Proxy Stack — Manager                  ║
+  ║       代理面板管理器                         ║
   ║       VLESS-Reality + Hysteria2 + MTProxy    ║
   ╚══════════════════════════════════════════════╝
 BANNER
     echo -e "${NC}"
     show_status_bar
     echo
-    echo -e "  ${BOLD}Setup${NC}"
-    echo "    1) Full deploy / Re-deploy"
-    echo "    2) Show node info & subscription links"
+    echo -e "  ${BOLD}部署${NC}"
+    echo "    1) 全新部署 / 重新部署"
+    echo "    2) 查看节点信息和订阅链接"
     echo
-    echo -e "  ${BOLD}Manage${NC}"
-    echo "    3) Restart all services"
-    echo "    4) Update to latest (pull from GitHub)"
-    echo "    5) Change a port"
-    echo "    6) View live logs"
+    echo -e "  ${BOLD}管理${NC}"
+    echo "    3) 重启所有服务"
+    echo "    4) 更新到最新版本"
+    echo "    5) 修改端口"
+    echo "    6) 查看实时日志"
     echo
-    echo -e "  ${BOLD}Tweaks${NC}"
-    echo "    7) Change Reality SNI"
-    echo "    8) Regenerate Telegram MTProxy secret"
-    echo "    9) Check / Enable BBR"
+    echo -e "  ${BOLD}调整${NC}"
+    echo "    7) 切换 Reality 伪装域名"
+    echo "    8) 重新生成 Telegram 代理密钥"
+    echo "    9) 检查 / 启用 BBR 加速"
     echo
-    echo -e "  ${BOLD}Other${NC}"
-    echo "   10) Uninstall"
-    echo "    0) Exit"
+    echo -e "  ${BOLD}其他${NC}"
+    echo "   10) 卸载"
+    echo "    0) 退出"
     echo
 }
 
 # ============================================================
-# Main
+# 主循环
 # ============================================================
 
 main() {
@@ -374,7 +373,7 @@ main() {
 
     while true; do
         show_menu
-        read -p "  Choice [0-10]: " choice
+        read -p "  请选择 [0-10]: " choice
         echo
         case "$choice" in
             1)  action_deploy ;;
@@ -387,11 +386,11 @@ main() {
             8)  action_regen_mtg_secret ;;
             9)  action_bbr_status ;;
             10) action_uninstall ;;
-            0)  echo "Bye!"; exit 0 ;;
-            *)  warn "Invalid choice" ;;
+            0)  echo "再见!"; exit 0 ;;
+            *)  warn "无效选项,请输入 0-10" ;;
         esac
         echo
-        read -p "  Press Enter to return to menu..." _
+        read -p "  按 Enter 返回主菜单..." _
     done
 }
 

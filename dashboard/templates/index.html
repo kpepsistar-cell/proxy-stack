@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proxy Dashboard - {{ cfg.NODE_NAME }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .copy-btn:active { transform: scale(0.97); }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+
+<div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+
+  <!-- Header -->
+  <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-emerald-400">Proxy Dashboard</h1>
+      <p class="text-zinc-400 text-sm mt-1">
+        Node: <span class="text-zinc-200">{{ cfg.NODE_NAME }}</span> ·
+        IP: <span class="text-zinc-200">{{ cfg.SERVER_IP }}</span>
+      </p>
+    </div>
+    <button onclick="location.reload()" class="px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-md">
+      ↻ Refresh
+    </button>
+  </header>
+
+  <!-- Service Status -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3 text-zinc-300">Service Status</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {% for name, info in containers.items() %}
+      <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+        {% if info.state == 'running' %}
+          <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full pulse-dot"></span>
+          <div>
+            <div class="font-medium text-zinc-100">{{ name }}</div>
+            <div class="text-xs text-emerald-400">{{ info.status }}</div>
+          </div>
+        {% else %}
+          <span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+          <div>
+            <div class="font-medium text-zinc-100">{{ name }}</div>
+            <div class="text-xs text-red-400">{{ info.status }}</div>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- VLESS-Reality -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="font-semibold text-emerald-400">VLESS-Reality</h2>
+        <span class="text-xs text-zinc-500">TCP {{ cfg.VLESS_PORT }}</span>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="grid grid-cols-2 gap-2 text-sm text-zinc-400">
+          <div>UUID: <span class="text-zinc-200 break-all">{{ cfg.VLESS_UUID }}</span></div>
+          <div>SNI: <span class="text-zinc-200">{{ cfg.REALITY_SNI }}</span></div>
+          <div>PublicKey: <span class="text-zinc-200 break-all">{{ cfg.REALITY_PUBLIC_KEY }}</span></div>
+          <div>ShortId: <span class="text-zinc-200">{{ cfg.REALITY_SHORT_ID }}</span></div>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-vless">{{ links.vless }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 rounded-md text-white"
+                  data-target="link-vless">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-text="{{ links.vless }}">QR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hysteria2 -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="font-semibold text-cyan-400">Hysteria2</h2>
+        <span class="text-xs text-zinc-500">UDP {{ cfg.HY2_PORT }}</span>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-400">
+          <div>Password: <span class="text-zinc-200 break-all">{{ cfg.HY2_PASSWORD }}</span></div>
+          <div>SNI: <span class="text-zinc-200">bing.com (insecure)</span></div>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-hy2">{{ links.hy2 }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-cyan-600 hover:bg-cyan-500 rounded-md text-white"
+                  data-target="link-hy2">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-text="{{ links.hy2 }}">QR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MTProxy -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="font-semibold text-sky-400">MTProxy (Telegram)</h2>
+        <span class="text-xs text-zinc-500">TCP {{ cfg.MTG_PORT }}</span>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="text-sm text-zinc-400">
+          Secret: <span class="text-zinc-200 break-all">{{ cfg.MTG_SECRET }}</span>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-mtg">{{ links.mtg_https }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-sky-600 hover:bg-sky-500 rounded-md text-white"
+                  data-target="link-mtg">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-text="{{ links.mtg_https }}">QR</button>
+        </div>
+        <p class="text-xs text-zinc-500">
+          Click on a phone with Telegram installed to add proxy directly:
+          <a href="{{ links.mtg_tg }}" class="text-sky-400 hover:underline">{{ links.mtg_tg }}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subscription -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-emerald-900/50 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-emerald-950/30 border-b border-emerald-900/50">
+        <h2 class="font-semibold text-emerald-400">Aggregated Subscription</h2>
+      </div>
+      <div class="p-5 space-y-3">
+        <p class="text-sm text-zinc-400">
+          Use this URL in clients that support subscription (sing-box, v2rayN, NekoBox, etc.):
+        </p>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-sub" data-relative="{{ sub_url }}"></code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 rounded-md text-white"
+                  data-target="link-sub">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-relative="{{ sub_url }}">QR</button>
+        </div>
+        <details class="text-sm">
+          <summary class="cursor-pointer text-zinc-400 hover:text-zinc-200">Show base64 (for manual paste)</summary>
+          <textarea readonly class="mt-2 w-full h-32 bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-zinc-300">{{ aggregated }}</textarea>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mt-10 text-center text-xs text-zinc-600">
+    Generated locally · No data leaves this server
+  </footer>
+</div>
+
+<!-- QR Modal -->
+<div id="qrModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+     onclick="this.classList.add('hidden')">
+  <div class="bg-white rounded-2xl p-4 max-w-sm" onclick="event.stopPropagation()">
+    <img id="qrImg" class="w-full h-auto" alt="QR" />
+    <p class="text-center text-zinc-700 text-xs mt-2 break-all" id="qrText"></p>
+  </div>
+</div>
+
+<script>
+// Build absolute subscription URL on the client (uses current host)
+(function() {
+  const subEl = document.getElementById('link-sub');
+  if (subEl) {
+    const rel = subEl.dataset.relative;
+    const abs = window.location.origin + rel;
+    subEl.textContent = abs;
+  }
+  document.querySelectorAll('.qr-btn[data-relative]').forEach(btn => {
+    btn.dataset.text = window.location.origin + btn.dataset.relative;
+  });
+})();
+
+// Copy to clipboard
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    if (!target) return;
+    const text = target.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(() => btn.textContent = orig, 1500);
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      btn.textContent = '✓ Copied';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  });
+});
+
+// Show QR modal
+document.querySelectorAll('.qr-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.dataset.text;
+    if (!text) return;
+    document.getElementById('qrImg').src = '/qr?text=' + encodeURIComponent(text);
+    document.getElementById('qrText').textContent = text;
+    document.getElementById('qrModal').classList.remove('hidden');
+  });
+});
+
+// Auto-refresh status every 15s
+setInterval(async () => {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    // Optional: update status indicators without full reload
+  } catch(e) {}
+}, 15000);
+</script>
+
+</body>
+</html>

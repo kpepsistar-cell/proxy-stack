@@ -1,0 +1,69 @@
+# ============================================================
+# Proxy Stack: sing-box + mtg + dashboard
+# ============================================================
+# All env vars come from ../config.env (loaded by docker compose --env-file)
+
+services:
+  singbox:
+    image: ghcr.io/sagernet/sing-box:latest
+    container_name: proxy-singbox
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./sing-box/config.json:/etc/sing-box/config.json:ro
+      - ./sing-box/hy2.crt:/etc/sing-box/hy2.crt:ro
+      - ./sing-box/hy2.key:/etc/sing-box/hy2.key:ro
+    command: ["run", "-c", "/etc/sing-box/config.json"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mtg:
+    image: nineseconds/mtg:2
+    container_name: proxy-mtg
+    restart: unless-stopped
+    ports:
+      - "${MTG_PORT}:3128"
+    command:
+      - "simple-run"
+      - "-n"
+      - "1.1.1.1"
+      - "-t"
+      - "30s"
+      - "0.0.0.0:3128"
+      - "${MTG_SECRET}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dashboard:
+    build: ./dashboard
+    container_name: proxy-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT}:5000"
+    environment:
+      SERVER_IP: "${SERVER_IP}"
+      NODE_NAME: "${NODE_NAME}"
+      VLESS_PORT: "${VLESS_PORT}"
+      VLESS_UUID: "${VLESS_UUID}"
+      REALITY_PUBLIC_KEY: "${REALITY_PUBLIC_KEY}"
+      REALITY_SHORT_ID: "${REALITY_SHORT_ID}"
+      REALITY_SNI: "${REALITY_SNI}"
+      HY2_PORT: "${HY2_PORT}"
+      HY2_PASSWORD: "${HY2_PASSWORD}"
+      MTG_PORT: "${MTG_PORT}"
+      MTG_SECRET: "${MTG_SECRET}"
+      DASHBOARD_USER: "${DASHBOARD_USER}"
+      DASHBOARD_PASS: "${DASHBOARD_PASS}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

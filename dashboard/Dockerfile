@@ -5,9 +5,8 @@ WORKDIR /app
 RUN apk add --no-cache curl docker-cli && \
     pip install --no-cache-dir flask qrcode pillow
 
-COPY app.py /app/app.py
-COPY templates /app/templates
-COPY static /app/static
+COPY . /app
+RUN mkdir -p /app/static
 
 EXPOSE 5000
 

@@ -300,6 +300,24 @@ action_uninstall() {
     bash uninstall.sh
 }
 
+action_doctor() {
+    cd "$INSTALL_DIR"
+    [ -f doctor.sh ] || { warn "doctor.sh 不存在,请先更新到最新版本(选 4)"; return; }
+    bash doctor.sh
+}
+
+action_repair() {
+    cd "$INSTALL_DIR"
+    [ -f repair.sh ] || { warn "repair.sh 不存在,请先更新到最新版本(选 4)"; return; }
+    bash repair.sh
+}
+
+action_tcp_tune() {
+    cd "$INSTALL_DIR"
+    [ -f tcp-tune.sh ] || { warn "tcp-tune.sh 不存在,请先更新到最新版本(选 4)"; return; }
+    bash tcp-tune.sh
+}
+
 # ============================================================
 # 菜单显示
 # ============================================================
@@ -356,6 +374,11 @@ BANNER
     echo "    8) 重新生成 Telegram 代理密钥"
     echo "    9) 检查 / 启用 BBR 加速"
     echo
+    echo -e "  ${BOLD}诊断与修复${NC}"
+    echo "   11) 健康诊断(一键体检)"
+    echo "   12) 修复服务(单服务重建)"
+    echo "   13) 智能 TCP 调优(测速 + 缓冲分档)"
+    echo
     echo -e "  ${BOLD}其他${NC}"
     echo "   10) 卸载"
     echo "    0) 退出"
@@ -373,7 +396,7 @@ main() {
 
     while true; do
         show_menu
-        read -p "  请选择 [0-10]: " choice
+        read -p "  请选择 [0-13]: " choice
         echo
         case "$choice" in
             1)  action_deploy ;;
@@ -386,8 +409,11 @@ main() {
             8)  action_regen_mtg_secret ;;
             9)  action_bbr_status ;;
             10) action_uninstall ;;
+            11) action_doctor ;;
+            12) action_repair ;;
+            13) action_tcp_tune ;;
             0)  echo "再见!"; exit 0 ;;
-            *)  warn "无效选项,请输入 0-10" ;;
+            *)  warn "无效选项,请输入 0-13" ;;
         esac
         echo
         read -p "  按 Enter 返回主菜单..." _

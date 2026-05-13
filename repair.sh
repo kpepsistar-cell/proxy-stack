@@ -90,7 +90,8 @@ case "$choice" in
         log "重新渲染 sing-box 配置..."
         # shellcheck disable=SC1091
         . ./config.env
-        export SERVER_IP VLESS_PORT VLESS_UUID REALITY_PRIVATE_KEY REALITY_SHORT_ID REALITY_SNI HY2_PORT HY2_PASSWORD
+        export SERVER_IP VLESS_PORT VLESS_UUID REALITY_PRIVATE_KEY REALITY_SHORT_ID REALITY_SNI \
+               HY2_PORT HY2_PASSWORD ANYTLS_PORT ANYTLS_PASSWORD TUIC_PORT TUIC_UUID TUIC_PASSWORD
         envsubst < sing-box/config.json.tpl > sing-box/config.json
         if jq empty sing-box/config.json 2>/dev/null; then
             ok "JSON 合法"

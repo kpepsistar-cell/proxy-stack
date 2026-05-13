@@ -105,6 +105,54 @@
     </div>
   </section>
 
+  <!-- AnyTLS -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="font-semibold text-amber-400">AnyTLS</h2>
+        <span class="text-xs text-zinc-500">TCP {{ cfg.ANYTLS_PORT }}</span>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-400">
+          <div>Password: <span class="text-zinc-200 break-all">{{ cfg.ANYTLS_PASSWORD }}</span></div>
+          <div>SNI: <span class="text-zinc-200">bing.com (insecure)</span></div>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-anytls">{{ links.anytls }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-amber-600 hover:bg-amber-500 rounded-md text-white"
+                  data-target="link-anytls">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-text="{{ links.anytls }}">QR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUIC -->
+  <section class="mb-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="font-semibold text-fuchsia-400">TUIC</h2>
+        <span class="text-xs text-zinc-500">UDP {{ cfg.TUIC_PORT }}</span>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-400">
+          <div>UUID: <span class="text-zinc-200 break-all">{{ cfg.TUIC_UUID }}</span></div>
+          <div>Password: <span class="text-zinc-200 break-all">{{ cfg.TUIC_PASSWORD }}</span></div>
+          <div>SNI: <span class="text-zinc-200">bing.com (insecure)</span></div>
+          <div>Congestion: <span class="text-zinc-200">bbr</span></div>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 flex items-start gap-2">
+          <code class="text-xs text-zinc-300 flex-1 break-all" id="link-tuic">{{ links.tuic }}</code>
+          <button class="copy-btn shrink-0 px-3 py-1 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 rounded-md text-white"
+                  data-target="link-tuic">Copy</button>
+          <button class="qr-btn shrink-0 px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 rounded-md"
+                  data-text="{{ links.tuic }}">QR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- MTProxy -->
   <section class="mb-6">
     <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">

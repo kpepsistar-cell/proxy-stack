@@ -125,6 +125,8 @@ action_update() {
     git pull origin "$REPO_BRANCH" || warn "git pull 出错"
     git stash pop >/dev/null 2>&1 || true
     chmod +x *.sh
+    bash update.sh
+    return
 
     log "拉取最新 docker 镜像..."
     compose pull
@@ -148,17 +150,21 @@ action_change_port() {
     echo "要修改哪个端口?"
     echo "  1) VLESS-Reality (TCP)"
     echo "  2) Hysteria2 (UDP)"
-    echo "  3) MTProxy (TCP)"
-    echo "  4) Dashboard 面板 (TCP)"
-    echo "  0) 取消"
-    read -p "请选择 [0-4]: " choice
+    echo "  3) AnyTLS (TCP)"
+    echo "  4) TUIC (UDP)"
+    echo "  5) MTProxy (TCP)"
+    echo "  6) Dashboard (TCP)"
+    echo "  0) Cancel"
+    read -p "Select [0-6]: " choice
 
     local var=""
     case "$choice" in
         1) var="VLESS_PORT" ;;
         2) var="HY2_PORT" ;;
-        3) var="MTG_PORT" ;;
-        4) var="DASHBOARD_PORT" ;;
+        3) var="ANYTLS_PORT" ;;
+        4) var="TUIC_PORT" ;;
+        5) var="MTG_PORT" ;;
+        6) var="DASHBOARD_PORT" ;;
         0) return ;;
         *) warn "无效选项"; return ;;
     esac

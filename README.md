@@ -4,6 +4,8 @@ KStar Proxy 是一个个人 VPS 代理一键部署和管理脚本，基于 Docke
 
 - VLESS-Reality
 - Hysteria2
+- AnyTLS
+- TUIC
 - MTProxy / mtg
 - Web Dashboard 面板
 
@@ -73,6 +75,8 @@ bash doctor.sh
 |---|---:|---|
 | VLESS-Reality | 443 | TCP |
 | Hysteria2 | 8443 | UDP |
+| AnyTLS | 9443 | TCP |
+| TUIC | 9444 | UDP |
 | MTProxy / mtg | 8888 | TCP |
 | Dashboard | 2053 | TCP |
 

@@ -46,6 +46,47 @@
         "certificate_path": "/etc/sing-box/hy2.crt",
         "key_path": "/etc/sing-box/hy2.key"
       }
+    },
+    {
+      "type": "anytls",
+      "tag": "anytls",
+      "listen": "::",
+      "listen_port": ${ANYTLS_PORT},
+      "users": [
+        {
+          "name": "kstar",
+          "password": "${ANYTLS_PASSWORD}"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "alpn": ["h2", "http/1.1"],
+        "certificate_path": "/etc/sing-box/hy2.crt",
+        "key_path": "/etc/sing-box/hy2.key"
+      }
+    },
+    {
+      "type": "tuic",
+      "tag": "tuic",
+      "listen": "::",
+      "listen_port": ${TUIC_PORT},
+      "users": [
+        {
+          "name": "kstar",
+          "uuid": "${TUIC_UUID}",
+          "password": "${TUIC_PASSWORD}"
+        }
+      ],
+      "congestion_control": "bbr",
+      "auth_timeout": "3s",
+      "zero_rtt_handshake": false,
+      "heartbeat": "10s",
+      "tls": {
+        "enabled": true,
+        "alpn": ["h3"],
+        "certificate_path": "/etc/sing-box/hy2.crt",
+        "key_path": "/etc/sing-box/hy2.key"
+      }
     }
   ],
   "outbounds": [

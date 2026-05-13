@@ -29,11 +29,16 @@ urlencode() {
 }
 
 NODE_TAG=$(urlencode "${NODE_NAME}")
+ANYTLS_PASSWORD_ENC=$(urlencode "${ANYTLS_PASSWORD}")
 
 # Build links
 VLESS_LINK="vless://${VLESS_UUID}@${SERVER_IP}:${VLESS_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${REALITY_SNI}&fp=chrome&pbk=${REALITY_PUBLIC_KEY}&sid=${REALITY_SHORT_ID}&type=tcp&headerType=none#${NODE_TAG}-Reality"
 
 HY2_LINK="hysteria2://${HY2_PASSWORD}@${SERVER_IP}:${HY2_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-Hy2"
+
+ANYTLS_LINK="anytls://${ANYTLS_PASSWORD_ENC}@${SERVER_IP}:${ANYTLS_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-AnyTLS"
+
+TUIC_LINK="tuic://${TUIC_UUID}:${TUIC_PASSWORD}@${SERVER_IP}:${TUIC_PORT}?congestion_control=bbr&udp_relay_mode=native&sni=bing.com&alpn=h3&allow_insecure=1#${NODE_TAG}-TUIC"
 
 MTG_TG="tg://proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${MTG_SECRET}"
 MTG_HTTPS="https://t.me/proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${MTG_SECRET}"
@@ -82,6 +87,29 @@ echo
 qr "$HY2_LINK"
 echo
 
+print_section "AnyTLS"
+echo "  Port      : ${ANYTLS_PORT} (TCP)"
+echo "  Password  : ${ANYTLS_PASSWORD}"
+echo "  SNI       : bing.com (insecure)"
+echo
+echo -e "${GREEN}Subscribe link:${NC}"
+echo "$ANYTLS_LINK"
+echo
+qr "$ANYTLS_LINK"
+echo
+
+print_section "TUIC"
+echo "  Port      : ${TUIC_PORT} (UDP)"
+echo "  UUID      : ${TUIC_UUID}"
+echo "  Password  : ${TUIC_PASSWORD}"
+echo "  SNI       : bing.com (insecure)"
+echo
+echo -e "${GREEN}Subscribe link:${NC}"
+echo "$TUIC_LINK"
+echo
+qr "$TUIC_LINK"
+echo
+
 print_section "MTProxy (Telegram)"
 echo "  Port      : ${MTG_PORT}"
 echo "  Secret    : ${MTG_SECRET}"
@@ -94,7 +122,7 @@ qr "$MTG_HTTPS"
 echo
 
 print_section "Aggregated Subscription (base64)"
-SUB_PLAIN=$(printf "%s\n%s\n" "$VLESS_LINK" "$HY2_LINK")
+SUB_PLAIN=$(printf "%s\n%s\n%s\n%s\n" "$VLESS_LINK" "$HY2_LINK" "$ANYTLS_LINK" "$TUIC_LINK")
 SUB_B64=$(echo -n "$SUB_PLAIN" | base64 -w 0 2>/dev/null || echo -n "$SUB_PLAIN" | base64)
 echo "$SUB_B64"
 echo

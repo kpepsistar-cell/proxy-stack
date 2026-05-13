@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Proxy Stack Deploy Script
-# VLESS-Reality + Hysteria2 + mtg (MTProxy) + Dashboard
+# VLESS-Reality + Hysteria2 + AnyTLS + TUIC + mtg (MTProxy) + Dashboard
 # Supports: Ubuntu 20.04+, Debian 11+, CentOS/Rocky/Alma 8+
 # ============================================================
 
@@ -240,6 +240,7 @@ gen_config() {
         log "Existing config.env found, loading..."
         # shellcheck disable=SC1091
         . ./config.env
+        ensure_config_defaults
         ok "Loaded config (keys preserved)"
         return
     fi
@@ -269,6 +270,16 @@ gen_config() {
     # Hysteria2 password
     local hy2_password
     hy2_password=$(openssl rand -hex 16)
+
+    # AnyTLS password
+    local anytls_password
+    anytls_password=$(openssl rand -base64 24 | tr -d '\n')
+
+    # TUIC credentials
+    local tuic_uuid
+    tuic_uuid=$(cat /proc/sys/kernel/random/uuid)
+    local tuic_password
+    tuic_password=$(openssl rand -hex 16)
 
     # mtg secret in HEX format (ee + 16 random bytes + hex-encoded fake host).
     # mtg v2 generate-secret outputs base64, but Telegram iOS only accepts hex.
@@ -311,6 +322,15 @@ REALITY_SNI=www.microsoft.com
 HY2_PORT=8443
 HY2_PASSWORD=$hy2_password
 
+# AnyTLS (sing-box 1.12+)
+ANYTLS_PORT=9443
+ANYTLS_PASSWORD=$anytls_password
+
+# TUIC
+TUIC_PORT=9444
+TUIC_UUID=$tuic_uuid
+TUIC_PASSWORD=$tuic_password
+
 # MTProxy (mtg)
 MTG_PORT=8888
 MTG_SECRET=$mtg_secret
@@ -328,13 +348,46 @@ EOF
     . ./config.env
 }
 
+# ---------- Add missing config keys for existing installs ----------
+ensure_config_defaults() {
+    local changed=0
+
+    if ! grep -q '^ANYTLS_PORT=' config.env; then
+        echo "ANYTLS_PORT=9443" >> config.env
+        changed=1
+    fi
+    if ! grep -q '^ANYTLS_PASSWORD=' config.env; then
+        echo "ANYTLS_PASSWORD=$(openssl rand -base64 24 | tr -d '\n')" >> config.env
+        changed=1
+    fi
+    if ! grep -q '^TUIC_PORT=' config.env; then
+        echo "TUIC_PORT=9444" >> config.env
+        changed=1
+    fi
+    if ! grep -q '^TUIC_UUID=' config.env; then
+        echo "TUIC_UUID=$(cat /proc/sys/kernel/random/uuid)" >> config.env
+        changed=1
+    fi
+    if ! grep -q '^TUIC_PASSWORD=' config.env; then
+        echo "TUIC_PASSWORD=$(openssl rand -hex 16)" >> config.env
+        changed=1
+    fi
+
+    if [ "$changed" -eq 1 ]; then
+        chmod 600 config.env
+        ok "Added missing AnyTLS/TUIC keys to config.env"
+        # shellcheck disable=SC1091
+        . ./config.env
+    fi
+}
+
 # ---------- Render sing-box config ----------
 render_singbox_config() {
     log "Rendering sing-box config..."
     # shellcheck disable=SC1091
     . ./config.env
     export SERVER_IP VLESS_PORT VLESS_UUID REALITY_PRIVATE_KEY REALITY_SHORT_ID REALITY_SNI \
-           HY2_PORT HY2_PASSWORD
+           HY2_PORT HY2_PASSWORD ANYTLS_PORT ANYTLS_PASSWORD TUIC_PORT TUIC_UUID TUIC_PASSWORD
 
     envsubst < sing-box/config.json.tpl > sing-box/config.json
 
@@ -402,6 +455,16 @@ health_check() {
         ok "Hysteria2 port $HY2_PORT (UDP): listening"
     else
         warn "Hysteria2 port $HY2_PORT (UDP): not listening"
+    fi
+    if ss -tlnp 2>/dev/null | grep -q ":${ANYTLS_PORT} "; then
+        ok "AnyTLS port $ANYTLS_PORT: listening"
+    else
+        warn "AnyTLS port $ANYTLS_PORT: not listening"
+    fi
+    if ss -ulnp 2>/dev/null | grep -q ":${TUIC_PORT} "; then
+        ok "TUIC port $TUIC_PORT (UDP): listening"
+    else
+        warn "TUIC port $TUIC_PORT (UDP): not listening"
     fi
     if ss -tlnp 2>/dev/null | grep -q ":${MTG_PORT} "; then
         ok "mtg port $MTG_PORT: listening"

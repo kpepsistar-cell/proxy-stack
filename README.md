@@ -19,6 +19,23 @@ SSH 登录 VPS 后，使用 root 用户执行：
 bash <(curl -sL https://raw.githubusercontent.com/kpepsistar-cell/proxy-stack/main/install.sh)
 ```
 
+## Domain / IP address
+
+Node links use `SERVER_HOST` as the public address. Fresh installs set `SERVER_HOST` to the detected IP by default.
+
+To use a domain, point its DNS A/AAAA record to the VPS first, then edit `/opt/proxy/config.env`:
+
+```env
+SERVER_HOST=proxy.example.com
+```
+
+Apply the change:
+
+```bash
+cd /opt/proxy
+bash update.sh
+```
+
 安装脚本会自动拉取项目到：
 
 ```text
@@ -176,4 +193,3 @@ proxy-stack/
     ├── templates/
     └── static/
 ```
-

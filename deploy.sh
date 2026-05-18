@@ -308,6 +308,7 @@ gen_config() {
 
 # Server
 SERVER_IP=$server_ip
+SERVER_HOST=$server_ip
 NODE_NAME=$(hostname)
 
 # VLESS-Reality
@@ -352,6 +353,10 @@ EOF
 ensure_config_defaults() {
     local changed=0
 
+    if ! grep -q '^SERVER_HOST=' config.env; then
+        echo "SERVER_HOST=${SERVER_IP:-$(detect_ip)}" >> config.env
+        changed=1
+    fi
     if ! grep -q '^ANYTLS_PORT=' config.env; then
         echo "ANYTLS_PORT=9443" >> config.env
         changed=1
@@ -512,8 +517,9 @@ main() {
     echo
     # shellcheck disable=SC1091
     . ./config.env
+    local public_host="${SERVER_HOST:-$SERVER_IP}"
     log "Dashboard:"
-    echo "    URL:      http://${SERVER_IP}:${DASHBOARD_PORT}"
+    echo "    URL:      http://${public_host}:${DASHBOARD_PORT}"
     echo "    User:     ${DASHBOARD_USER}"
     echo "    Password: ${DASHBOARD_PASS}"
     echo

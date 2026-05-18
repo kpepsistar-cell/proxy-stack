@@ -20,6 +20,7 @@ app = Flask(__name__)
 # ---------- Config from env ----------
 CFG = {
     "SERVER_IP":          os.environ.get("SERVER_IP", "0.0.0.0"),
+    "SERVER_HOST":        os.environ.get("SERVER_HOST") or os.environ.get("SERVER_IP", "0.0.0.0"),
     "NODE_NAME":          os.environ.get("NODE_NAME", "node"),
     "VLESS_PORT":         os.environ.get("VLESS_PORT", "443"),
     "VLESS_UUID":         os.environ.get("VLESS_UUID", ""),
@@ -44,7 +45,7 @@ DASH_PASS = os.environ.get("DASHBOARD_PASS", "")
 def vless_link():
     tag = urllib.parse.quote(f"{CFG['NODE_NAME']}-Reality")
     return (
-        f"vless://{CFG['VLESS_UUID']}@{CFG['SERVER_IP']}:{CFG['VLESS_PORT']}"
+        f"vless://{CFG['VLESS_UUID']}@{CFG['SERVER_HOST']}:{CFG['VLESS_PORT']}"
         f"?encryption=none&flow=xtls-rprx-vision&security=reality"
         f"&sni={CFG['REALITY_SNI']}&fp=chrome"
         f"&pbk={CFG['REALITY_PUBLIC_KEY']}&sid={CFG['REALITY_SHORT_ID']}"
@@ -55,7 +56,7 @@ def vless_link():
 def hy2_link():
     tag = urllib.parse.quote(f"{CFG['NODE_NAME']}-Hy2")
     return (
-        f"hysteria2://{CFG['HY2_PASSWORD']}@{CFG['SERVER_IP']}:{CFG['HY2_PORT']}"
+        f"hysteria2://{CFG['HY2_PASSWORD']}@{CFG['SERVER_HOST']}:{CFG['HY2_PORT']}"
         f"?sni=bing.com&insecure=1#{tag}"
     )
 
@@ -64,7 +65,7 @@ def anytls_link():
     tag = urllib.parse.quote(f"{CFG['NODE_NAME']}-AnyTLS")
     password = urllib.parse.quote(CFG["ANYTLS_PASSWORD"], safe="")
     return (
-        f"anytls://{password}@{CFG['SERVER_IP']}:{CFG['ANYTLS_PORT']}"
+        f"anytls://{password}@{CFG['SERVER_HOST']}:{CFG['ANYTLS_PORT']}"
         f"?sni=bing.com&insecure=1#{tag}"
     )
 
@@ -72,7 +73,7 @@ def anytls_link():
 def tuic_link():
     tag = urllib.parse.quote(f"{CFG['NODE_NAME']}-TUIC")
     return (
-        f"tuic://{CFG['TUIC_UUID']}:{CFG['TUIC_PASSWORD']}@{CFG['SERVER_IP']}:{CFG['TUIC_PORT']}"
+        f"tuic://{CFG['TUIC_UUID']}:{CFG['TUIC_PASSWORD']}@{CFG['SERVER_HOST']}:{CFG['TUIC_PORT']}"
         f"?congestion_control=bbr&udp_relay_mode=native&sni=bing.com"
         f"&alpn=h3&allow_insecure=1#{tag}"
     )
@@ -80,7 +81,7 @@ def tuic_link():
 
 def mtg_links():
     base = (
-        f"server={CFG['SERVER_IP']}&port={CFG['MTG_PORT']}"
+        f"server={CFG['SERVER_HOST']}&port={CFG['MTG_PORT']}"
         f"&secret={CFG['MTG_SECRET']}"
     )
     return {
@@ -230,7 +231,7 @@ def sub_clash():
 proxies:
   - name: "{name_vless}"
     type: vless
-    server: {CFG['SERVER_IP']}
+    server: {CFG['SERVER_HOST']}
     port: {CFG['VLESS_PORT']}
     uuid: {CFG['VLESS_UUID']}
     network: tcp
@@ -245,7 +246,7 @@ proxies:
 
   - name: "{name_hy2}"
     type: hysteria2
-    server: {CFG['SERVER_IP']}
+    server: {CFG['SERVER_HOST']}
     port: {CFG['HY2_PORT']}
     password: {CFG['HY2_PASSWORD']}
     sni: bing.com
@@ -255,7 +256,7 @@ proxies:
 
   - name: "{name_tuic}"
     type: tuic
-    server: {CFG['SERVER_IP']}
+    server: {CFG['SERVER_HOST']}
     port: {CFG['TUIC_PORT']}
     uuid: {CFG['TUIC_UUID']}
     password: {CFG['TUIC_PASSWORD']}
@@ -334,7 +335,7 @@ def sub_singbox():
             {
                 "type": "vless",
                 "tag": f"{CFG['NODE_NAME']}-Reality",
-                "server": CFG["SERVER_IP"],
+                "server": CFG["SERVER_HOST"],
                 "server_port": int(CFG["VLESS_PORT"]),
                 "uuid": CFG["VLESS_UUID"],
                 "flow": "xtls-rprx-vision",
@@ -352,7 +353,7 @@ def sub_singbox():
             {
                 "type": "hysteria2",
                 "tag": f"{CFG['NODE_NAME']}-Hy2",
-                "server": CFG["SERVER_IP"],
+                "server": CFG["SERVER_HOST"],
                 "server_port": int(CFG["HY2_PORT"]),
                 "password": CFG["HY2_PASSWORD"],
                 "tls": {
@@ -365,7 +366,7 @@ def sub_singbox():
             {
                 "type": "anytls",
                 "tag": f"{CFG['NODE_NAME']}-AnyTLS",
-                "server": CFG["SERVER_IP"],
+                "server": CFG["SERVER_HOST"],
                 "server_port": int(CFG["ANYTLS_PORT"]),
                 "password": CFG["ANYTLS_PASSWORD"],
                 "idle_session_check_interval": "30s",
@@ -381,7 +382,7 @@ def sub_singbox():
             {
                 "type": "tuic",
                 "tag": f"{CFG['NODE_NAME']}-TUIC",
-                "server": CFG["SERVER_IP"],
+                "server": CFG["SERVER_HOST"],
                 "server_port": int(CFG["TUIC_PORT"]),
                 "uuid": CFG["TUIC_UUID"],
                 "password": CFG["TUIC_PASSWORD"],

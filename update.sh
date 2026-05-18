@@ -19,7 +19,13 @@ compose() {
 ensure_config_defaults() {
     [ -f config.env ] || return 0
     local changed=0
+    # shellcheck disable=SC1091
+    . ./config.env
 
+    if ! grep -q '^SERVER_HOST=' config.env; then
+        echo "SERVER_HOST=${SERVER_IP}" >> config.env
+        changed=1
+    fi
     if ! grep -q '^ANYTLS_PORT=' config.env; then
         echo "ANYTLS_PORT=9443" >> config.env
         changed=1

@@ -48,6 +48,7 @@ services:
       - "${DASHBOARD_PORT}:5000"
     environment:
       SERVER_IP: "${SERVER_IP}"
+      SERVER_HOST: "${SERVER_HOST}"
       NODE_NAME: "${NODE_NAME}"
       VLESS_PORT: "${VLESS_PORT}"
       VLESS_UUID: "${VLESS_UUID}"

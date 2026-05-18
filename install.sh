@@ -185,6 +185,33 @@ action_change_port() {
     [[ ! "$confirm" =~ ^[Nn]$ ]] && bash deploy.sh
 }
 
+action_change_host() {
+    cd "$INSTALL_DIR"
+    [ -f config.env ] || { warn "尚未部署"; return; }
+
+    local current
+    current=$(grep '^SERVER_HOST=' config.env | cut -d= -f2)
+    [ -z "$current" ] && current=$(grep '^SERVER_IP=' config.env | cut -d= -f2)
+
+    echo
+    echo "Current public host: $current"
+    echo "Use a domain only after its DNS A/AAAA record points to this VPS."
+    read -p "New public host (domain or IP, empty to cancel): " new_host
+    [ -z "$new_host" ] && return
+
+    if grep -q '^SERVER_HOST=' config.env; then
+        sed -i "s|^SERVER_HOST=.*|SERVER_HOST=${new_host}|" config.env
+    else
+        sed -i "/^SERVER_IP=/a SERVER_HOST=${new_host}" config.env
+    fi
+
+    ok "SERVER_HOST=${new_host}"
+    read -p "Restart dashboard to apply host change?[Y/n] " confirm
+    if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
+        compose up -d --build dashboard
+    fi
+}
+
 action_logs() {
     cd "$INSTALL_DIR"
     [ -f docker-compose.yml ] || { warn "尚未部署"; return; }
@@ -343,7 +370,8 @@ show_status_bar() {
 
         if [ -f config.env ]; then
             local ip
-            ip=$(grep '^SERVER_IP=' config.env | cut -d= -f2)
+            ip=$(grep '^SERVER_HOST=' config.env | cut -d= -f2)
+            [ -z "$ip" ] && ip=$(grep '^SERVER_IP=' config.env | cut -d= -f2)
             local dport
             dport=$(grep '^DASHBOARD_PORT=' config.env | cut -d= -f2)
             echo -e "  面板地址: ${CYAN}http://${ip}:${dport}${NC}"
@@ -384,6 +412,7 @@ BANNER
     echo "   11) 健康诊断(一键体检)"
     echo "   12) 修复服务(单服务重建)"
     echo "   13) 智能 TCP 调优(测速 + 缓冲分档)"
+    echo "   14) 修改节点地址(IP / 域名)"
     echo
     echo -e "  ${BOLD}其他${NC}"
     echo "   10) 卸载"
@@ -402,7 +431,7 @@ main() {
 
     while true; do
         show_menu
-        read -p "  请选择 [0-13]: " choice
+        read -p "  请选择 [0-14]: " choice
         echo
         case "$choice" in
             1)  action_deploy ;;
@@ -418,8 +447,9 @@ main() {
             11) action_doctor ;;
             12) action_repair ;;
             13) action_tcp_tune ;;
+            14) action_change_host ;;
             0)  echo "再见!"; exit 0 ;;
-            *)  warn "无效选项,请输入 0-13" ;;
+            *)  warn "无效选项,请输入 0-14" ;;
         esac
         echo
         read -p "  按 Enter 返回主菜单..." _

@@ -151,6 +151,12 @@ for var in SERVER_IP VLESS_PORT VLESS_UUID REALITY_PRIVATE_KEY REALITY_PUBLIC_KE
     fi
 done
 
+if [ -n "${SERVER_HOST:-}" ]; then
+    pass "SERVER_HOST is set to $SERVER_HOST"
+else
+    warn "SERVER_HOST is missing; links will fall back to SERVER_IP"
+fi
+
 for var in ANYTLS_PORT ANYTLS_PASSWORD TUIC_PORT TUIC_UUID TUIC_PASSWORD; do
     if [ -n "${!var}" ]; then
         pass "$var is set"

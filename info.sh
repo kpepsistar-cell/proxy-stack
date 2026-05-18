@@ -30,18 +30,19 @@ urlencode() {
 
 NODE_TAG=$(urlencode "${NODE_NAME}")
 ANYTLS_PASSWORD_ENC=$(urlencode "${ANYTLS_PASSWORD}")
+PUBLIC_HOST="${SERVER_HOST:-$SERVER_IP}"
 
 # Build links
-VLESS_LINK="vless://${VLESS_UUID}@${SERVER_IP}:${VLESS_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${REALITY_SNI}&fp=chrome&pbk=${REALITY_PUBLIC_KEY}&sid=${REALITY_SHORT_ID}&type=tcp&headerType=none#${NODE_TAG}-Reality"
+VLESS_LINK="vless://${VLESS_UUID}@${PUBLIC_HOST}:${VLESS_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${REALITY_SNI}&fp=chrome&pbk=${REALITY_PUBLIC_KEY}&sid=${REALITY_SHORT_ID}&type=tcp&headerType=none#${NODE_TAG}-Reality"
 
-HY2_LINK="hysteria2://${HY2_PASSWORD}@${SERVER_IP}:${HY2_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-Hy2"
+HY2_LINK="hysteria2://${HY2_PASSWORD}@${PUBLIC_HOST}:${HY2_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-Hy2"
 
-ANYTLS_LINK="anytls://${ANYTLS_PASSWORD_ENC}@${SERVER_IP}:${ANYTLS_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-AnyTLS"
+ANYTLS_LINK="anytls://${ANYTLS_PASSWORD_ENC}@${PUBLIC_HOST}:${ANYTLS_PORT}?sni=bing.com&insecure=1#${NODE_TAG}-AnyTLS"
 
-TUIC_LINK="tuic://${TUIC_UUID}:${TUIC_PASSWORD}@${SERVER_IP}:${TUIC_PORT}?congestion_control=bbr&udp_relay_mode=native&sni=bing.com&alpn=h3&allow_insecure=1#${NODE_TAG}-TUIC"
+TUIC_LINK="tuic://${TUIC_UUID}:${TUIC_PASSWORD}@${PUBLIC_HOST}:${TUIC_PORT}?congestion_control=bbr&udp_relay_mode=native&sni=bing.com&alpn=h3&allow_insecure=1#${NODE_TAG}-TUIC"
 
-MTG_TG="tg://proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${MTG_SECRET}"
-MTG_HTTPS="https://t.me/proxy?server=${SERVER_IP}&port=${MTG_PORT}&secret=${MTG_SECRET}"
+MTG_TG="tg://proxy?server=${PUBLIC_HOST}&port=${MTG_PORT}&secret=${MTG_SECRET}"
+MTG_HTTPS="https://t.me/proxy?server=${PUBLIC_HOST}&port=${MTG_PORT}&secret=${MTG_SECRET}"
 
 # QR helper
 qr() {
@@ -61,6 +62,7 @@ print_section() {
 print_section "Server Info"
 echo "  Node name : ${NODE_NAME}"
 echo "  Public IP : ${SERVER_IP}"
+echo "  Host      : ${PUBLIC_HOST}"
 echo
 
 print_section "VLESS-Reality"
@@ -130,9 +132,9 @@ echo -e "${YELLOW}(Paste this base64 into clients that accept aggregated subscri
 echo
 
 print_section "Dashboard"
-echo "  URL       : http://${SERVER_IP}:${DASHBOARD_PORT}"
+echo "  URL       : http://${PUBLIC_HOST}:${DASHBOARD_PORT}"
 echo "  User      : ${DASHBOARD_USER}"
 echo "  Password  : ${DASHBOARD_PASS}"
 echo
-echo "  Subscribe URL (for clients): http://${SERVER_IP}:${DASHBOARD_PORT}/sub?token=${DASHBOARD_PASS}"
+echo "  Subscribe URL (for clients): http://${PUBLIC_HOST}:${DASHBOARD_PORT}/sub?token=${DASHBOARD_PASS}"
 echo
